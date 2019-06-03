@@ -1,0 +1,11 @@
+backends/
+coverage/
+logs/
+node_modules/
+.terraform/
+*.log
+*.swp
+*.tfvars
+.nyc_output
+package-lock.json
+npm-debug.log*

@@ -1,0 +1,74 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Action": [
+        "s3:ListBucket",
+        "s3:GetReplicationConfiguration",
+        "s3:GetObjectVersionForReplication",
+        "s3:GetObjectVersionAcl",
+        "s3:GetObjectVersionTagging"
+      ],
+      "Effect": "Allow",
+      "Resource": [
+        "arn:aws:s3:::${primary_bucket_name}",
+        "arn:aws:s3:::${primary_bucket_name}/*"
+      ]
+    },
+    {
+      "Action": [
+        "s3:ReplicateObject",
+        "s3:ReplicateTags",
+        "s3:GetObjectVersionTagging",
+        "s3:ObjectOwnerOverrideToBucketOwner"
+      ],
+      "Effect": "Allow",
+      "Condition": {
+        "StringLikeIfExists": {
+          "s3:x-amz-server-side-encryption": [
+            "aws:kms",
+            "AES256"
+          ],
+          "s3:x-amz-server-side-encryption-aws-kms-key-id": [
+            "${backup_encryption_key_arn}"
+          ]
+        }
+      },
+      "Resource": "${backup_encryption_key_arn}/*"
+    },
+    {
+      "Action": [
+        "kms:Decrypt"
+      ],
+      "Effect": "Allow",
+      "Condition": {
+        "StringLike": {
+          "kms:ViaService": "s3.${primary_region}.amazonaws.com",
+          "kms:EncryptionContext:aws:s3:arn": [
+            "arn:aws:s3:::${primary_bucket_name}/*"
+          ]
+        }
+      },
+      "Resource": [
+        "${primary_encryption_key_arn}"
+      ]
+    },
+    {
+      "Action": [
+        "kms:Encrypt"
+      ],
+      "Effect": "Allow",
+      "Condition": {
+        "StringLike": {
+          "kms:ViaService": "s3.${backup_region}.amazonaws.com",
+          "kms:EncryptionContext:aws:s3:arn": [
+            "arn:aws:s3:::${backup_bucket_name}/*"
+          ]
+        }
+      },
+      "Resource": [
+        "${backup_encryption_key_arn}"
+      ]
+    }
+  ]
+}
