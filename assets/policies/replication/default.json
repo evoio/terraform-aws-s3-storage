@@ -3,24 +3,32 @@
   "Statement": [
     {
       "Action": [
-        "s3:ListBucket",
         "s3:GetReplicationConfiguration",
-        "s3:GetObjectVersionForReplication",
+        "s3:ListBucket"
+      ],
+      "Effect": "Allow",
+      "Resource": [
+        "arn:aws:s3:::${primary_bucket_name}"
+      ]
+    },
+    {
+      "Action": [
+        "s3:GetObjectLegalHold",
+        "s3:GetObjectRetention",
+        "s3:GetObjectVersion",
         "s3:GetObjectVersionAcl",
         "s3:GetObjectVersionTagging"
       ],
       "Effect": "Allow",
       "Resource": [
-        "arn:aws:s3:::${primary_bucket_name}",
         "arn:aws:s3:::${primary_bucket_name}/*"
       ]
     },
     {
       "Action": [
+        "s3:ObjectOwnerOverrideToBucketOwner",
         "s3:ReplicateObject",
-        "s3:ReplicateTags",
-        "s3:GetObjectVersionTagging",
-        "s3:ObjectOwnerOverrideToBucketOwner"
+        "s3:ReplicateTags"
       ],
       "Effect": "Allow",
       "Condition": {
@@ -34,7 +42,7 @@
           ]
         }
       },
-      "Resource": "${backup_encryption_key_arn}/*"
+      "Resource": "arn:aws:s3:::${backup_bucket_name}/*"
     },
     {
       "Action": [
