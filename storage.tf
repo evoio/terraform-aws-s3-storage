@@ -9,24 +9,50 @@ resource "aws_s3_bucket" "backup" {
 
   bucket = local.backup_bucket_name
   region = var.backup_region
-  acl    = "private"
+  acl    = var.backup_acl
 
   versioning {
     enabled = var.enable_versioning
   }
 
   lifecycle_rule {
-    id      = "expire"
-    enabled = var.enable_expiration
+    id      = "default"
+    enabled = true
 
     prefix = "*"
 
-    expiration {
-      days = var.expiration_duration
+    dynamic "transition" {
+      for_each = var.backup_transitions
+      content {
+        storage_class = transition.storage_class
+        days          = transition.date
+      }
     }
 
-    noncurrent_version_expiration {
-      days = var.expiration_duration
+    dynamic "expiration" {
+      for_each = (
+        (
+          var.enable_expiration &&
+          var.backup_current_expiration_duration > 0
+        ) ?
+        list(1) : []
+      )
+      content {
+        days = var.backup_current_expiration_duration
+      }
+    }
+
+    dynamic "noncurrent_version_expiration" {
+      for_each = (
+        (
+          var.enable_expiration &&
+          var.backup_noncurrent_expiration_duration > 0
+        ) ?
+        list(1) : []
+      )
+      content {
+        days = var.backup_noncurrent_expiration_duration
+      }
     }
   }
 
@@ -107,7 +133,7 @@ EOF
 resource "aws_s3_bucket" "primary" {
   bucket = var.bucket_name
   region = var.primary_region
-  acl    = "private"
+  acl    = var.primary_acl
 
   versioning {
     # S3 versioning is required for replication
@@ -115,25 +141,48 @@ resource "aws_s3_bucket" "primary" {
   }
 
   lifecycle_rule {
-    id      = "expire"
-    enabled = var.enable_expiration
+    id      = "default"
+    enabled = true
 
     prefix = "*"
 
-    expiration {
-      days = var.expiration_duration
+    dynamic "transition" {
+      for_each = var.primary_transitions
+      content {
+        storage_class = transition.storage_class
+        days          = transition.date
+      }
     }
 
-    noncurrent_version_expiration {
-      days = var.expiration_duration
+    dynamic "expiration" {
+      for_each = (
+        (
+          var.enable_expiration &&
+          var.primary_current_expiration_duration > 0
+        ) ?
+        list(1) : []
+      )
+      content {
+        days = var.primary_current_expiration_duration
+      }
+    }
+
+    dynamic "noncurrent_version_expiration" {
+      for_each = (
+        (
+          var.enable_expiration &&
+          var.primary_noncurrent_expiration_duration > 0
+        ) ?
+        list(1) : []
+      )
+      content {
+        days = var.primary_noncurrent_expiration_duration
+      }
     }
   }
 
   dynamic "server_side_encryption_configuration" {
-    for_each = (var.enable_encryption ?
-      module.primary_key.key.key_id :
-      list(var.primary_key_id)
-    )
+    for_each = var.enable_encryption ? module.primary_key.key.key_id : []
     content {
       rule {
         apply_server_side_encryption_by_default {
@@ -156,8 +205,9 @@ resource "aws_s3_bucket" "primary" {
 
         #
         # Fires following error if present and encryption is not enabled:
-        #   Error putting S3 replication configuration: InvalidRequest:
-        #   ReplicaKmsKeyID must be specified if SseKmsEncryptedObjects tag is present.
+        # Error putting S3 replication configuration: InvalidRequest:
+        # ReplicaKmsKeyID must be specified if SseKmsEncryptedObjects tag is
+        # present.
         #
         dynamic "source_selection_criteria" {
           for_each = var.enable_encryption ? list(1) : []
@@ -171,12 +221,9 @@ resource "aws_s3_bucket" "primary" {
         destination {
           account_id    = var.backup_account
           bucket        = aws_s3_bucket.backup[0].arn
-          storage_class = "STANDARD"
+          storage_class = var.backup_storage_class
           replica_kms_key_id = (var.enable_encryption ?
-            (var.backup_key_id == "" ?
-              aws_kms_key.backup_s3_encryption[0].arn :
-              var.backup_key_id
-            ) :
+            module.backup_key.key.arn :
             null
           )
           access_control_translation {

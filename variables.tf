@@ -71,16 +71,67 @@ variable "bucket_name" {
   description = "Name of the storage bucket"
 }
 
-variable "expiration_duration" {
-  description = "Number of day before logs are automatically expired"
+variable "primary_acl" {
+  default = "private"
+}
+
+variable "backup_acl" {
+  default = "private"
+}
+
+variable "backup_storage_class" {
+  default = "STANDARD"
+}
+
+variable "primary_current_expiration_duration" {
+  description = "Number of day before file are automatically expired"
   default     = 90
+}
+
+variable "primary_noncurrent_expiration_duration" {
+  description = "Number of day before file are automatically expired"
+  default     = 90
+}
+
+variable "backup_current_expiration_duration" {
+  description = "Number of day before file are automatically expired"
+  default     = 90
+}
+
+variable "backup_noncurrent_expiration_duration" {
+  description = "Number of day before file are automatically expired"
+  default     = 90
+}
+
+variable "primary_transitions" {
+  default = []
+}
+
+variable "backup_transitions" {
+  default = []
 }
 
 variable "primary_key_admin_role" {
   default = ""
 }
 
+variable "primary_key_admin_assume_role_policy" {
+  default = ""
+}
+
+variable "primary_key_admin_policy" {
+  default = ""
+}
+
 variable "backup_key_admin_role" {
+  default = ""
+}
+
+variable "backup_key_admin_assume_role_policy" {
+  default = ""
+}
+
+variable "backup_key_admin_policy" {
   default = ""
 }
 

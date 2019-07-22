@@ -1,66 +1,149 @@
 #
 # Key Administration
-# Gives permissions to administer primary and backup KMS keys
+# Gives permissions to administer the KMS key
 #
 
-resource "aws_iam_role" "key_administrator" {
-  count = var.create && var.key_admin_role == "" ? 1 : 0
+locals {
+  # Breakout conditions for creating resources - allows creating clearer
+  # compound conditions.
 
-  path = var.iam_path == "" ? null : var.iam_path
-  name = format(
-    "%s%sKeyAdministrator%s",
-    var.name_prefix,
-    replace(var.usage, " ", ""),
-    var.name_suffix
+  create_key_admin_role = (
+    var.create &&
+    var.existing_key_admin_iam_role_arn == ""
   )
 
-  assume_role_policy = (
-    var.key_admin_assume_role_policy != "" ?
-    var.key_admin_assume_role_policy :
-    null
+  create_key_admin_policy = (
+    var.create &&
+    var.existing_key_admin_iam_role_arn == "" &&
+    var.existing_key_admin_iam_policy_arn == "" &&
+    var.key_admin_iam_policy != ""
   )
-}
 
-resource "aws_iam_policy" "key_administrator" {
-  count = (
+  attach_key_admin_policy = (
     (
-      var.create &&
-      var.key_admin_role == "" &&
-      var.key_admin_policy != ""
-    ) ? 1 : 0
-  )
-
-  path = var.iam_path == "" ? null : var.iam_path
-  name = format(
-    "%s%sKeyAdministrator%s",
-    var.name_prefix,
-    replace(var.usage, " ", ""),
-    var.name_suffix
-  )
-
-  description = "Provides access to manage the ${var.usage} ${var.role} key"
-
-  policy = var.key_admin_policy
-EOF
-}
-
-resource "aws_iam_role_policy_attachment" "key_administrator" {
-  count = (
+      # Role and policy created
+      local.create_key_admin_role &&
+      local.create_key_admin_policy
+    )
+    ||
     (
-      var.create &&
-      var.key_admin_role == "" &&
-      var.key_admin_policy != ""
-    ) ? 1 : 0
+      # Role created, policy provided
+      local.create_key_admin_role &&
+      var.existing_key_admin_iam_policy_arn != ""
+    )
+    ||
+    (
+      # Role provided, policy created
+      var.existing_key_admin_iam_role_arn != "" &&
+      local.create_key_admin_policy
+    )
   )
-
-  role = aws_iam_role.key_administrator[0].name
-  policy_arn = aws_iam_policy.key_administrator[0].arn
 }
 
 locals {
-  key_admin_role = (
-    var.key_admin_role == "" ?
-    aws_iam_role.key_administrator[0].arn :
-    var.key_admin_role
+  key_admin_iam_role_name = var.key_admin_iam_role_name == "" ?
+    format(
+      "%s%sKeyAdministrator%s",
+      var.name_prefix,
+      replace(var.usage, " ", ""),
+      var.name_suffix
+    ) :
+    var.key_admin_iam_role_name
+}
+
+resource "aws_iam_role" "key_administrator" {
+  count = local.create_key_admin_role ? 1 : 0
+
+  path = var.key_admin_iam_path == "" ? null : var.key_admin_iam_path
+
+  # Specify "name" OR "name_prefix"
+  name = var.key_admin_iam_role_use_name_prefix ?
+    null :
+    local.key_admin_iam_role_name
+  
+  name_prefix = var.key_admin_iam_role_use_name_prefix ?
+    local.key_admin_iam_role_name :
+    null
+
+  assume_role_policy = (
+    var.key_admin_iam_role_assume_role_policy != "" ?
+    var.key_admin_iam_role_assume_role_policy :
+    null
   )
+
+  permissions_boundary = (
+    var.key_admin_iam_role_permissions_boundary != "" ?
+    var.key_admin_iam_role_permissions_boundary :
+    null
+  )
+
+  max_session_duration = var.key_admin_iam_role_max_session_duration
+}
+
+locals {
+  key_admin_iam_policy_name = var.key_admin_iam_policy_name == "" ?
+    format(
+      "%s%sKeyAdministrator%s",
+      var.name_prefix,
+      replace(var.usage, " ", ""),
+      var.name_suffix
+    ) :
+    var.key_admin_iam_policy_name
+}
+
+resource "aws_iam_policy" "key_administrator" {
+  count = local.create_key_admin_policy ? 1 : 0
+
+  path = var.key_admin_iam_path == "" ? null : var.key_admin_iam_path
+
+  # Specify "name" OR "name_prefix"
+  name = var.key_admin_iam_policy_use_name_prefix ?
+    null :
+    local.key_admin_iam_policy_name
+  
+  name_prefix = var.key_admin_iam_policy_use_name_prefix ?
+    local.key_admin_iam_policy_name :
+    null
+
+  description = var.key_admin_iam_policy_description == "" ?
+    format(
+      "Provides access to manage the %s key",
+      var.usage
+    ) :
+    var.key_admin_iam_policy_description
+
+  policy = var.key_admin_iam_policy
+}
+
+# Determine whether to use provided IAM role and policy details or newly
+# created resource details
+locals {
+  key_admin_iam_role_arn = (
+    var.existing_key_admin_iam_role_arn == "" ?
+    aws_iam_role.key_administrator[0].arn :
+    var.existing_key_admin_iam_role_arn
+  )
+
+  key_admin_iam_role_name = (
+    var.existing_key_admin_iam_role_arn == "" ?
+    aws_iam_role.key_administrator[0].name :
+    element(split("/",var.existing_key_admin_iam_role_arn), 1)
+  )
+
+  key_admin_iam_policy_arn = (
+    var.existing_key_admin_iam_policy_arn == "" ?
+    aws_iam_policy.key_administrator[0].arn :
+    var.existing_key_admin_iam_policy_arn
+  )
+}
+
+resource "aws_iam_role_policy_attachment" "key_administrator" {
+  count = local.attach_key_admin_policy ? 1 : 0
+
+  role       = local.key_admin_iam_role_name
+  policy_arn = local.key_admin_iam_policy_arn
+}
+
+data "aws_iam_role" "key_admin_role" {
+  name = local.key_admin_iam_role_name
 }

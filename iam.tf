@@ -1,6 +1,7 @@
 #
 # Replication
 # Gives S3 permissions to replicate from the primary to the backup bucket.
+# Note that the replication role is only required if backups are enabled.
 #
 
 resource "aws_iam_role" "replication" {
@@ -45,12 +46,11 @@ data "template_file" "replication_policy" {
 
   vars = {
     primary_bucket_name = var.bucket_name
-    primary_encryption_key = (# Ignored if encryption not enabled
+    primary_encryption_key_arn = (# Ignored if encryption not enabled
       var.enable_encryption ? module.primary_key.key.arn : null
     )
 
     backup_bucket_name = local.backup_bucket_name
-    backup_bucket_arn = aws_s3_bucket.backup[0].arn
     backup_encryption_key_arn = (# Ignored if encryption not enabled
       var.enable_encryption ? module.backup_key.key.arn : null
     )

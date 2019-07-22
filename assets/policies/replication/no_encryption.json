@@ -23,7 +23,7 @@
         "s3:ObjectOwnerOverrideToBucketOwner"
       ],
       "Effect": "Allow",
-      "Resource": "${backup_bucket_arn}/*"
+      "Resource": "arn:aws:s3:::${backup_bucket_name}/*"
     }
   ]
 }
