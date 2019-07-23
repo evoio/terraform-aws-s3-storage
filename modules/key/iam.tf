@@ -41,7 +41,8 @@ locals {
 }
 
 locals {
-  key_admin_iam_role_name = var.key_admin_iam_role_name == "" ?
+  key_admin_iam_role_name = (
+    var.key_admin_iam_role_name == "" ?
     format(
       "%s%sKeyAdministrator%s",
       var.name_prefix,
@@ -49,6 +50,7 @@ locals {
       var.name_suffix
     ) :
     var.key_admin_iam_role_name
+  )
 }
 
 resource "aws_iam_role" "key_administrator" {
@@ -57,13 +59,17 @@ resource "aws_iam_role" "key_administrator" {
   path = var.key_admin_iam_path == "" ? null : var.key_admin_iam_path
 
   # Specify "name" OR "name_prefix"
-  name = var.key_admin_iam_role_use_name_prefix ?
+  name = (
+    var.key_admin_iam_role_use_name_prefix ?
     null :
     local.key_admin_iam_role_name
-  
-  name_prefix = var.key_admin_iam_role_use_name_prefix ?
+  )
+
+  name_prefix = (
+    var.key_admin_iam_role_use_name_prefix ?
     local.key_admin_iam_role_name :
     null
+  )
 
   assume_role_policy = (
     var.key_admin_iam_role_assume_role_policy != "" ?
@@ -81,7 +87,8 @@ resource "aws_iam_role" "key_administrator" {
 }
 
 locals {
-  key_admin_iam_policy_name = var.key_admin_iam_policy_name == "" ?
+  key_admin_iam_policy_name = (
+    var.key_admin_iam_policy_name == "" ?
     format(
       "%s%sKeyAdministrator%s",
       var.name_prefix,
@@ -89,6 +96,7 @@ locals {
       var.name_suffix
     ) :
     var.key_admin_iam_policy_name
+  )
 }
 
 resource "aws_iam_policy" "key_administrator" {
@@ -97,20 +105,26 @@ resource "aws_iam_policy" "key_administrator" {
   path = var.key_admin_iam_path == "" ? null : var.key_admin_iam_path
 
   # Specify "name" OR "name_prefix"
-  name = var.key_admin_iam_policy_use_name_prefix ?
+  name = (
+    var.key_admin_iam_policy_use_name_prefix ?
     null :
     local.key_admin_iam_policy_name
-  
-  name_prefix = var.key_admin_iam_policy_use_name_prefix ?
+  )
+
+  name_prefix = (
+    var.key_admin_iam_policy_use_name_prefix ?
     local.key_admin_iam_policy_name :
     null
+  )
 
-  description = var.key_admin_iam_policy_description == "" ?
+  description = (
+    var.key_admin_iam_policy_description == "" ?
     format(
       "Provides access to manage the %s key",
       var.usage
     ) :
     var.key_admin_iam_policy_description
+  )
 
   policy = var.key_admin_iam_policy
 }
@@ -127,7 +141,7 @@ locals {
   key_admin_iam_role_name = (
     var.existing_key_admin_iam_role_arn == "" ?
     aws_iam_role.key_administrator[0].name :
-    element(split("/",var.existing_key_admin_iam_role_arn), 1)
+    element(split("/", var.existing_key_admin_iam_role_arn), 1)
   )
 
   key_admin_iam_policy_arn = (

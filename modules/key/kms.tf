@@ -2,19 +2,21 @@ locals {
   # Breakout conditions for creating resources - allows creating clearer
   # compound conditions.
 
-  create_key = var.create
+  create_key       = var.create
   create_key_alias = var.create && var.create_alias
 }
 
 resource "aws_kms_key" "main" {
   count = local.create_key ? 1 : 0
 
-  description = var.description == "" ?
+  description = (
+    var.description == "" ?
     format(
       "%s Encryption Key",
       var.usage
     ) :
     var.description
+  )
 
   is_enabled              = var.enabled
   enable_key_rotation     = var.enable_key_rotation
@@ -104,7 +106,8 @@ EOF
 resource "aws_kms_alias" "main" {
   count = local.create_key_alias ? 1 : 0
 
-  name = var.alias == "" ?
+  name = (
+    var.alias == "" ?
     format(
       "alias/%s%s-encryption%s",
       lower(var.name_prefix),
@@ -112,6 +115,7 @@ resource "aws_kms_alias" "main" {
       lower(var.name_suffix)
     ) :
     var.alias
+  )
 
   target_key_id = aws_kms_key.main[0].id
 }
