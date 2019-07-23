@@ -5,8 +5,8 @@ module "primary_key" {
   create = var.enable_encryption
   usage  = format("%s Primary", var.usage)
 
-  existing_key_id                 = var.primary_key_id
-  existing_key_admin_iam_role_arn = var.primary_key_admin_role
+  existing_key_id                 = var.existing_primary_key_id
+  existing_key_admin_iam_role_arn = var.existing_primary_key_admin_role_arn
 
   name_prefix = local.name_prefix
   name_suffix = local.name_suffix
@@ -29,8 +29,8 @@ module "backup_key" {
   create = var.enable_encryption && var.enable_backups
   usage  = format("%s Backup", var.usage)
 
-  existing_key_id                 = var.backup_key_id
-  existing_key_admin_iam_role_arn = var.backup_key_admin_role
+  existing_key_id                 = var.existing_backup_key_id
+  existing_key_admin_iam_role_arn = var.existing_backup_key_admin_role_arn
 
   name_prefix = local.name_prefix
   name_suffix = local.name_suffix

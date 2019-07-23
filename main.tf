@@ -1,6 +1,8 @@
 
-
 locals {
+  # Determine roles and profiles to use for AWS access - read from specified
+  # or use defaults.
+
   primary_assume_role = lookup(
     var.deploy_roles, "primary", var.default_deploy_role
   )
@@ -36,7 +38,8 @@ provider "aws" {
 provider "aws" {
   alias = "backup"
 
-  region = var.backup_region
+  # if not enabling backups, use primary region so do not get an error
+  region = var.enable_backups ? var.backup_region : var.primary_region
   profile = (
     local.backup_profile != "" ? local.backup_profile : null
   )
@@ -53,11 +56,14 @@ provider "aws" {
 }
 
 locals {
+  # Calculate name prefixes and suffixes
+
   name_prefix = var.name_prefix != "" ? "${var.name_prefix}-" : ""
 
+  # Add specified suffix and workspace name (if non-default workspace)
   name_suffix = "${format(
     "%s%s",
     var.name_suffix != "" ? "-${var.name_suffix}" : "",
-    terraform.workspace != "default" ? "-${terraform.workspace}" : ""
+    terraform.workspace != var.default_workspace ? "-${terraform.workspace}" : ""
   )}"
 }

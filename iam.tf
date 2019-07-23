@@ -4,8 +4,17 @@
 # Note that the replication role is only required if backups are enabled.
 #
 
+locals {
+  # Breakout conditions for creating resources - allows creating clearer
+  # compound conditions.
+
+  create_replication_role   = var.enable_backups
+  create_replication_policy = var.enable_backups
+  attach_replication_policy = var.enable_backups
+}
+
 resource "aws_iam_role" "replication" {
-  count = var.enable_backups ? 1 : 0
+  count = local.create_replication_role ? 1 : 0
 
   # e.g. /SMART/AuditLogReplication
   path = var.iam_path == "" ? null : var.iam_path
@@ -34,7 +43,7 @@ EOF
 }
 
 data "template_file" "replication_policy" {
-  count = var.enable_backups ? 1 : 0
+  count = local.create_replication_policy ? 1 : 0
 
   # Use a different template depending on whether encryption was enabled
   # or not.
@@ -58,7 +67,7 @@ data "template_file" "replication_policy" {
 }
 
 resource "aws_iam_policy" "replication" {
-  count = var.enable_backups ? 1 : 0
+  count = local.create_replication_policy ? 1 : 0
 
   # E.g. /SMART/AuditLogReplication
   path = var.iam_path == "" ? null : var.iam_path
@@ -75,7 +84,7 @@ resource "aws_iam_policy" "replication" {
 }
 
 resource "aws_iam_role_policy_attachment" "replication" {
-  count = var.enable_backups ? 1 : 0
+  count = local.attach_replication_policy ? 1 : 0
 
   role = aws_iam_role.replication[0].name
   policy_arn = aws_iam_policy.replication[0].arn

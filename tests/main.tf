@@ -19,7 +19,7 @@ module "storage" {
   default_profile     = var.default_profile
   default_deploy_role = var.default_deploy_role
 
-  bucket_name            = var.bucket_name
-  primary_key_admin_role = var.primary_key_admin_role
-  backup_key_admin_role  = var.backup_key_admin_role
+  bucket_name                         = var.bucket_name
+  existing_primary_key_admin_role_arn = var.primary_key_admin_role
+  existing_backup_key_admin_role_arn  = var.backup_key_admin_role
 }

@@ -1,17 +1,26 @@
 
 locals {
+  # Breakout conditions for creating resources - allows creating clearer
+  # compound conditions.
+
+  create_backup_bucket = var.enable_backups
+}
+
+locals {
+  # Calculate Backup bucket name from Primary
   backup_bucket_name = "backup-${var.bucket_name}"
 }
 
 resource "aws_s3_bucket" "backup" {
   provider = "aws.backup"
-  count    = var.enable_backups ? 1 : 0
+  count    = local.create_backup_bucket ? 1 : 0
 
   bucket = local.backup_bucket_name
   region = var.backup_region
   acl    = var.backup_acl
 
   versioning {
+    # Cannot be disabled once enabled, only suspended
     enabled = var.enable_versioning
   }
 
@@ -19,7 +28,7 @@ resource "aws_s3_bucket" "backup" {
     id      = "default"
     enabled = true
 
-    prefix = "*"
+    prefix = "*" # TODO: currently only supports all bucket content
 
     dynamic "transition" {
       for_each = var.backup_transitions
@@ -116,7 +125,7 @@ EOF
 
 resource "aws_s3_bucket_policy" "backup" {
   provider = "aws.backup"
-  count = var.enable_backups ? 1 : 0
+  count = local.create_backup_bucket ? 1 : 0
 
   bucket = aws_s3_bucket.backup[0].id
 
@@ -249,6 +258,8 @@ data "template_file" "custom_primary_bucket_policy_statements" {
 }
 
 locals {
+  # Define "common" S3 bucket statements
+
   primary_bucket_policy_cloudtrail_statement = <<EOF
 {
   "Effect": "Allow",
@@ -273,6 +284,7 @@ locals {
 }
 EOF
 
+  # Combine bucket policy statements
   primary_bucket_policy_statements = compact(concat(
     data.template_file.custom_primary_bucket_policy_statements.*.rendered,
     list(
@@ -282,7 +294,7 @@ EOF
         ""
       )
     )
-))
+  ))
 }
 
 resource "aws_s3_bucket_policy" "primary" {
