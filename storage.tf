@@ -125,7 +125,7 @@ EOF
 
 resource "aws_s3_bucket_policy" "backup" {
   provider = "aws.backup"
-  count = local.create_backup_bucket ? 1 : 0
+  count    = local.create_backup_bucket ? 1 : 0
 
   bucket = aws_s3_bucket.backup[0].id
 

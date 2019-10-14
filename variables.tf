@@ -109,7 +109,7 @@ variable "profiles" {
       }
 EOD
 
-  type = map
+  type    = map
   default = {}
 }
 

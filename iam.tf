@@ -55,12 +55,12 @@ data "template_file" "replication_policy" {
 
   vars = {
     primary_bucket_name = var.bucket_name
-    primary_encryption_key_arn = (# Ignored if encryption not enabled
+    primary_encryption_key_arn = ( # Ignored if encryption not enabled
       var.enable_encryption ? module.primary_key.key.arn : null
     )
 
     backup_bucket_name = local.backup_bucket_name
-    backup_encryption_key_arn = (# Ignored if encryption not enabled
+    backup_encryption_key_arn = ( # Ignored if encryption not enabled
       var.enable_encryption ? module.backup_key.key.arn : null
     )
   }
@@ -86,6 +86,6 @@ resource "aws_iam_policy" "replication" {
 resource "aws_iam_role_policy_attachment" "replication" {
   count = local.attach_replication_policy ? 1 : 0
 
-  role = aws_iam_role.replication[0].name
+  role       = aws_iam_role.replication[0].name
   policy_arn = aws_iam_policy.replication[0].arn
 }
