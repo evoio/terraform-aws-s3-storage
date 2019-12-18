@@ -9,12 +9,12 @@ locals {
 
   create_key_admin_role = (
     var.create &&
-    var.existing_key_admin_iam_role_arn == ""
+    var.existing_key_admin_iam_role == ""
   )
 
   create_key_admin_policy = (
     var.create &&
-    var.existing_key_admin_iam_role_arn == "" &&
+    var.existing_key_admin_iam_role == "" &&
     var.existing_key_admin_iam_policy_arn == "" &&
     var.key_admin_iam_policy != ""
   )
@@ -34,7 +34,7 @@ locals {
     ||
     (
       # Role provided, policy created
-      var.existing_key_admin_iam_role_arn != "" &&
+      var.existing_key_admin_iam_role != "" &&
       local.create_key_admin_policy
     )
   )
@@ -42,21 +42,38 @@ locals {
 
 locals {
   key_admin_iam_role_name = (
-    var.key_admin_iam_role_name == "" ?
+    var.existing_key_admin_iam_role != "" ?
+    var.existing_key_admin_iam_role :
+    (
+      var.key_admin_iam_role_name != "" ?
+      var.key_admin_iam_role_name :
+      format(
+        "%s%s%sKeyAdministrator%s",
+        var.iam_name_prefix,
+        var.name_prefix,
+        replace(var.usage, " ", ""),
+        var.name_suffix
+      )
+    )
+  )
+
+  key_admin_iam_policy_name = (
+    var.key_admin_iam_policy_name == "" ?
     format(
-      "%s%sKeyAdministrator%s",
+      "%s%s%sKeyAdministrator%s",
+      var.iam_name_prefix,
       var.name_prefix,
       replace(var.usage, " ", ""),
       var.name_suffix
     ) :
-    var.key_admin_iam_role_name
+    var.key_admin_iam_policy_name
   )
 }
 
 resource "aws_iam_role" "key_administrator" {
   count = local.create_key_admin_role ? 1 : 0
 
-  path = var.key_admin_iam_path == "" ? null : var.key_admin_iam_path
+  path = var.iam_path == "" ? null : var.iam_path
 
   # Specify "name" OR "name_prefix"
   name = (
@@ -86,23 +103,10 @@ resource "aws_iam_role" "key_administrator" {
   max_session_duration = var.key_admin_iam_role_max_session_duration
 }
 
-locals {
-  key_admin_iam_policy_name = (
-    var.key_admin_iam_policy_name == "" ?
-    format(
-      "%s%sKeyAdministrator%s",
-      var.name_prefix,
-      replace(var.usage, " ", ""),
-      var.name_suffix
-    ) :
-    var.key_admin_iam_policy_name
-  )
-}
-
 resource "aws_iam_policy" "key_administrator" {
   count = local.create_key_admin_policy ? 1 : 0
 
-  path = var.key_admin_iam_path == "" ? null : var.key_admin_iam_path
+  path = var.iam_path == "" ? null : var.iam_path
 
   # Specify "name" OR "name_prefix"
   name = (
@@ -129,35 +133,21 @@ resource "aws_iam_policy" "key_administrator" {
   policy = var.key_admin_iam_policy
 }
 
-# Determine whether to use provided IAM role and policy details or newly
-# created resource details
-locals {
-  key_admin_iam_role_arn = (
-    var.existing_key_admin_iam_role_arn == "" ?
-    aws_iam_role.key_administrator[0].arn :
-    var.existing_key_admin_iam_role_arn
-  )
+resource "aws_iam_role_policy_attachment" "key_administrator" {
+  count = local.attach_key_admin_policy ? 1 : 0
 
-  key_admin_iam_role_name = (
-    var.existing_key_admin_iam_role_arn == "" ?
-    aws_iam_role.key_administrator[0].name :
-    element(split("/", var.existing_key_admin_iam_role_arn), 1)
-  )
+  role = local.key_admin_iam_role_name
 
-  key_admin_iam_policy_arn = (
+  # Determine whether to use provided IAM role and policy details or newly
+  # created resource details
+  policy_arn = (
     var.existing_key_admin_iam_policy_arn == "" ?
     aws_iam_policy.key_administrator[0].arn :
     var.existing_key_admin_iam_policy_arn
   )
 }
 
-resource "aws_iam_role_policy_attachment" "key_administrator" {
-  count = local.attach_key_admin_policy ? 1 : 0
-
-  role       = local.key_admin_iam_role_name
-  policy_arn = local.key_admin_iam_policy_arn
-}
-
 data "aws_iam_role" "key_admin_role" {
-  name = local.key_admin_iam_role_name
+  count = var.create || var.existing_key_admin_iam_role != "" ? 1 : 0
+  name  = local.key_admin_iam_role_name
 }

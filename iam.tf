@@ -1,5 +1,28 @@
+###############################################################################
+# iam.tf                                                                      #
+#                                                                             #
+# This file creates the IAM policies that delegate permission for provisioned #
+# resources to function correctly.                                            #
+#                                                                             #
+###############################################################################
+
+#
+# Notes:-
+# -----------------------------------------------------------------------------
+# - All IAM resource names are created by concatenating the following (the
+#   local equivalent is used to account for empty values):
+#    - var.iam_name_prefix
+#    - var.name_prefix
+#    - (role / policy specific name)
+#    - var.usage
+#    - var.name_suffix
+#
+# - Complex / dynamic policy document content is stored in ./assets/policies/*
+#
+
 #
 # Replication
+# -----------------------------------------------------------------------------
 # Gives S3 permissions to replicate from the primary to the backup bucket.
 # Note that the replication role is only required if backups are enabled.
 #
@@ -16,13 +39,13 @@ locals {
 resource "aws_iam_role" "replication" {
   count = local.create_replication_role ? 1 : 0
 
-  # e.g. /SMART/AuditLogReplication
   path = var.iam_path == "" ? null : var.iam_path
   name = format(
-    "%s%sReplication%s",
-    local.name_prefix,
+    "%s%s%sReplication%s",
+    local.computed_iam_name_prefix,
+    local.computed_name_prefix,
     replace(var.usage, " ", ""),
-    local.name_suffix
+    local.computed_name_suffix
   )
 
   # Allow S3 to assume the role
@@ -46,7 +69,6 @@ data "template_file" "replication_policy" {
   count = local.create_replication_policy ? 1 : 0
 
   # Use a different template depending on whether encryption was enabled
-  # or not.
   template = file(format(
     "%s/assets/policies/replication/%s.json",
     path.module,
@@ -55,12 +77,12 @@ data "template_file" "replication_policy" {
 
   vars = {
     primary_bucket_name = var.bucket_name
-    primary_encryption_key_arn = ( # Ignored if encryption not enabled
+    primary_encryption_key_arn = ( # ignored if encryption not enabled
       var.enable_encryption ? module.primary_key.key.arn : null
     )
 
     backup_bucket_name = local.backup_bucket_name
-    backup_encryption_key_arn = ( # Ignored if encryption not enabled
+    backup_encryption_key_arn = ( # ignored if encryption not enabled
       var.enable_encryption ? module.backup_key.key.arn : null
     )
   }
@@ -69,16 +91,19 @@ data "template_file" "replication_policy" {
 resource "aws_iam_policy" "replication" {
   count = local.create_replication_policy ? 1 : 0
 
-  # E.g. /SMART/AuditLogReplication
   path = var.iam_path == "" ? null : var.iam_path
   name = format(
-    "%s%sReplication%s",
-    local.name_prefix,
+    "%s%s%sReplication%s",
+    local.computed_iam_name_prefix,
+    local.computed_name_prefix,
     replace(var.usage, " ", ""),
-    local.name_suffix
+    local.computed_name_suffix
   )
 
-  description = "Provides access to replicate ${var.usage} to the backup."
+  description = format(
+    "Provides access to replicate %s to the backup.",
+    var.usage
+  )
 
   policy = data.template_file.replication_policy[0].rendered
 }

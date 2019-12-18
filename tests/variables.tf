@@ -28,20 +28,20 @@ variable "name_suffix" {
   default = ""
 }
 
-variable "primary_account" {
+variable "primary_deploy_account" {
   description = "ID of Control AWS account"
 }
 
-variable "backup_account" {
+variable "backup_deploy_account" {
   description = "ID of Backup AWS account"
   default     = ""
 }
 
-variable "primary_region" {
+variable "primary_deploy_region" {
   description = "Region for primary resources"
 }
 
-variable "backup_region" {
+variable "backup_deploy_region" {
   description = "Region for backup resources"
 }
 

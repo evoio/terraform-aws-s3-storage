@@ -10,11 +10,11 @@ module "storage" {
 
   default_workspace = var.default_workspace
 
-  primary_account = var.primary_account
-  backup_account  = var.backup_account
+  primary_deploy_account = var.primary_deploy_account
+  backup_deploy_account  = var.backup_deploy_account
 
-  primary_region = var.primary_region
-  backup_region  = var.backup_region
+  primary_deploy_region = var.primary_deploy_region
+  backup_deploy_region  = var.backup_deploy_region
 
   default_profile     = var.default_profile
   default_deploy_role = var.default_deploy_role

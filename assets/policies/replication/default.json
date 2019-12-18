@@ -51,7 +51,7 @@
       "Effect": "Allow",
       "Condition": {
         "StringLike": {
-          "kms:ViaService": "s3.${primary_region}.amazonaws.com",
+          "kms:ViaService": "s3.${primary_deploy_region}.amazonaws.com",
           "kms:EncryptionContext:aws:s3:arn": [
             "arn:aws:s3:::${primary_bucket_name}/*"
           ]
@@ -68,7 +68,7 @@
       "Effect": "Allow",
       "Condition": {
         "StringLike": {
-          "kms:ViaService": "s3.${backup_region}.amazonaws.com",
+          "kms:ViaService": "s3.${backup_deploy_region}.amazonaws.com",
           "kms:EncryptionContext:aws:s3:arn": [
             "arn:aws:s3:::${backup_bucket_name}/*"
           ]

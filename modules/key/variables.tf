@@ -12,7 +12,7 @@ EOD
   default = "" # Create new Key
 }
 
-variable "existing_key_admin_iam_role_arn" {
+variable "existing_key_admin_iam_role" {
   description = <<EOD
     (Optional) Specify an existing IAM Role ARN for the Key Admin Role (leave
     blank to create a new role)
@@ -37,17 +37,17 @@ EOD
 
 variable "create" {
   description = "Should the key be created? (true / false)"
-  default = true
+  default     = true
 }
 
 variable "create_alias" {
   description = "Should an alias be created for the key? (true / false)"
-  default = true
+  default     = true
 }
 
 variable "enabled" {
   description = "Should the key be enabled? (true / false)"
-  default = true
+  default     = true
 }
 
 variable "usage" {
@@ -78,7 +78,11 @@ EOD
 # Define variables for configuring IAM resources
 #
 
-variable "key_admin_iam_path" {
+variable "iam_name_prefix" {
+  default = ""
+}
+
+variable "iam_path" {
   description = "(Optional) IAM resource path"
   default     = ""
 }
@@ -171,7 +175,7 @@ EOD
 
 variable "enable_key_rotation" {
   description = "Enable yearly automatic key rotation for the key"
-  default = false
+  default     = false
 }
 
 variable "deletion_window" {
@@ -181,4 +185,23 @@ variable "deletion_window" {
 EOD
 
   default = 10
+}
+
+variable "common_key_policy_statements" {
+  description = <<EOD
+    (Optional) List of the names of "common" policy statements defined by
+    this module to be added to the key.
+EOD
+
+  type    = list
+  default = []
+}
+
+variable "custom_key_policy_statements" {
+  description = <<EOD
+    (Optional) List of policy statements to be added to the key.
+EOD
+
+  type    = list
+  default = []
 }

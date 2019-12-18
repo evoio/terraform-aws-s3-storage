@@ -6,6 +6,36 @@ locals {
   create_key_alias = var.create && var.create_alias
 }
 
+data "template_file" "standard_key_policy_statements" {
+  count = length(data.aws_iam_role.key_admin_role)
+
+  template = file(
+    format("%s/assets/policies/key/default.json", path.module)
+  )
+
+  vars = {
+    account_id             = local.account_id
+    key_admin_iam_role_arn = data.aws_iam_role.key_admin_role[0].arn
+  }
+}
+
+# Render custom templates passed to module
+data "template_file" "custom_key_policy_statements" {
+  count = length(var.custom_key_policy_statements)
+
+  template = element(
+    var.custom_key_policy_statements,
+    count.index
+  )
+}
+
+locals {
+  key_policy_statements = compact(concat(
+    data.template_file.standard_key_policy_statements.*.rendered,
+    data.template_file.custom_key_policy_statements.*.rendered
+  ))
+}
+
 resource "aws_kms_key" "main" {
   count = local.create_key ? 1 : 0
 
@@ -26,78 +56,7 @@ resource "aws_kms_key" "main" {
 {
   "Version": "2012-10-17",
   "Statement": [
-    {
-      "Sid": "Enable IAM User Permissions",
-      "Effect": "Allow",
-      "Principal": {
-        "AWS": "arn:aws:iam::${local.account_id}:root"
-      },
-      "Action": "kms:*",
-      "Resource": "*"
-    },
-    {
-      "Sid": "Allow access for Key Administrators",
-      "Effect": "Allow",
-      "Principal": {
-        "AWS": "${local.key_admin_iam_role_arn}"
-      },
-      "Action": [
-        "kms:Create*",
-        "kms:Describe*",
-        "kms:Enable*",
-        "kms:List*",
-        "kms:Put*",
-        "kms:Update*",
-        "kms:Revoke*",
-        "kms:Disable*",
-        "kms:Get*",
-        "kms:Delete*",
-        "kms:TagResource",
-        "kms:UntagResource",
-        "kms:ScheduleKeyDeletion",
-        "kms:CancelKeyDeletion"
-      ],
-      "Resource": "*"
-    },
-    {
-      "Sid": "Allow use of the key",
-      "Effect": "Allow",
-      "Principal": {
-        "AWS": [
-          "arn:aws:iam::${local.account_id}:root",
-          "${local.key_admin_iam_role_arn}"
-        ]
-      },
-      "Action": [
-        "kms:Encrypt",
-        "kms:Decrypt",
-        "kms:ReEncrypt*",
-        "kms:GenerateDataKey*",
-        "kms:DescribeKey"
-      ],
-      "Resource": "*"
-    },
-    {
-      "Sid": "Allow attachment of persistent resources",
-      "Effect": "Allow",
-      "Principal": {
-        "AWS": [
-          "arn:aws:iam::${local.account_id}:root",
-          "${local.key_admin_iam_role_arn}"
-        ]
-      },
-      "Action": [
-        "kms:CreateGrant",
-        "kms:ListGrants",
-        "kms:RevokeGrant"
-      ],
-      "Resource": "*",
-      "Condition": {
-        "Bool": {
-          "kms:GrantIsForAWSResource": "true"
-        }
-      }
-    }
+${join(",", local.key_policy_statements)}
   ]
 }
 EOF
@@ -122,13 +81,14 @@ resource "aws_kms_alias" "main" {
 
 # Retrieve the key - either the one create or the one specified in the
 # variables.
-data "aws_kms_key" "key" {
-  key_id = (var.existing_key_id != "" ?
+data "aws_kms_key" "key" { #TODO
+  key_id = (
+    /*var.existing_key_id != "" ?
     var.existing_key_id :
     (
       var.create ?
-      aws_kms_key.main[0].key_id :
-      "alias/aws/s3"
-    )
+      aws_kms_key.main[0].key_id :*/
+    "alias/aws/s3"
+    //)
   )
 }

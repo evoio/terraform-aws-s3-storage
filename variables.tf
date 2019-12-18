@@ -1,5 +1,14 @@
+###############################################################################
+# variables.tf                                                                #
+#                                                                             #
+# This file defines variables that can be used to configure the module.       #
+# Values may be provided using "tfvar" files or via the CLI at run time       #
+#                                                                             #
+###############################################################################
+
 #
-# FEATURES
+# Features
+# -----------------------------------------------------------------------------
 # Define feature flags for enabling/disabling functionality within the module.
 #
 
@@ -29,7 +38,8 @@ EOD
 }
 
 #
-# GENERAL
+# General
+# -----------------------------------------------------------------------------
 # Define variables used across multiple resource types, e.g. for naming.
 #
 
@@ -39,12 +49,12 @@ variable "default_workspace" {
     other workspace are suffixed with its name
 EOD
 
-  default = "default"
+  default = "prod"
 }
 
 variable "usage" {
   description = <<EOD
-    Use case of the key, e.g. 'Audit Logs Primary' - properly capitalise,
+    Use case of the key, e.g. 'Audit Logs' - properly capitalise,
     spaces are automatically replaced with "-" or "_"
 EOD
 }
@@ -70,11 +80,11 @@ EOD
 # Define variables for configuring the required providers.
 #
 
-variable "primary_account" {
+variable "primary_deploy_account" {
   description = "ID of Primary AWS account"
 }
 
-variable "backup_account" {
+variable "backup_deploy_account" {
   description = <<EOD
     (Optional) ID of Backup AWS account (may be same as Primary) - this is
     required when enabling backups
@@ -83,11 +93,11 @@ EOD
   default = "" # Required if enabling backups
 }
 
-variable "primary_region" {
+variable "primary_deploy_region" {
   description = "Region for primary resources"
 }
 
-variable "backup_region" {
+variable "backup_deploy_region" {
   description = <<EOD
     (Optional) Region for backup resources (must differ from Primary) - this
     is required when enabling backups
@@ -98,6 +108,7 @@ EOD
 
 variable "default_profile" {
   description = "AWS CLI profile used for deploying resources"
+  default     = ""
 }
 
 variable "profiles" {
@@ -132,15 +143,20 @@ EOD
 
 #
 # IAM
+# -----------------------------------------------------------------------------
 # Define variables for configuring IAM resources
 #
 
-variable "iam_path" {
-  description = "Path to use for all IAM resources"
-  default     = "/SMART/"
+variable "iam_name_prefix" {
+  default = ""
 }
 
-variable "existing_primary_key_admin_role_arn" {
+variable "iam_path" {
+  description = "Path to use for all IAM resources"
+  default     = ""
+}
+
+variable "existing_primary_key_admin_role" {
   default = ""
 }
 
@@ -152,7 +168,7 @@ variable "primary_key_admin_policy" {
   default = ""
 }
 
-variable "existing_backup_key_admin_role_arn" {
+variable "existing_backup_key_admin_role" {
   default = ""
 }
 
@@ -187,6 +203,14 @@ EOD
   default = "" # Create new key
 }
 
+variable "enable_primary_key_rotation" {
+  default = true
+}
+
+variable "enable_backup_key_rotation" {
+  default = true
+}
+
 variable "primary_key_deletion_window" {
   description = <<EOD
     Specify the period of time between deleting the Primary key and its
@@ -203,6 +227,46 @@ variable "backup_key_deletion_window" {
 EOD
 
   default = 10
+}
+
+# Access
+
+variable "common_primary_key_policy_statements" {
+  description = <<EOD
+    (Optional) List of the names of "common" policy statements defined by
+    this module to be added to the primary key.
+EOD
+
+  type    = list
+  default = []
+}
+
+variable "custom_primary_key_policy_statements" {
+  description = <<EOD
+    (Optional) List of policy statements to be added to the primary key.
+EOD
+
+  type    = list
+  default = []
+}
+
+variable "common_backup_key_policy_statements" {
+  description = <<EOD
+    (Optional) List of the names of "common" policy statements defined by
+    this module to be added to the backup key.
+EOD
+
+  type    = list
+  default = []
+}
+
+variable "custom_backup_key_policy_statements" {
+  description = <<EOD
+    (Optional) List of policy statements to be added to the backup key.
+EOD
+
+  type    = list
+  default = []
 }
 
 #
@@ -222,11 +286,11 @@ variable "backup_storage_class" {
 
 # Access
 
-variable "primary_acl" {
+variable "primary_bucket_acl" {
   default = "private"
 }
 
-variable "backup_acl" {
+variable "backup_bucket_acl" {
   default = "private"
 }
 
