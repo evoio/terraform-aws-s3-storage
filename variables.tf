@@ -17,66 +17,37 @@ variable "enable_versioning" {
     Enables S3 bucket versioning - overridden by backups since it is a
     requirement
 EOD
+
+  default = true
 }
 
 variable "enable_expiration" {
   description = <<EOD
     Automatically expire logs after a specified period
 EOD
+
+  default = false
 }
 
 variable "enable_backups" {
   description = <<EOD
     Enable automatically backing up logs to secondary bucket
 EOD
+
+  default = false
 }
 
 variable "enable_encryption" {
   description = <<EOD
     Enable KMS encryption on the primary and backup buckets
 EOD
+
+  default = false
 }
 
 #
-# General
+# Deployment Configuration
 # -----------------------------------------------------------------------------
-# Define variables used across multiple resource types, e.g. for naming.
-#
-
-variable "default_workspace" {
-  description = <<EOD
-    (Optional) Override name of default workspace - resources created in any
-    other workspace are suffixed with its name
-EOD
-
-  default = "prod"
-}
-
-variable "usage" {
-  description = <<EOD
-    Use case of the key, e.g. 'Audit Logs' - properly capitalise,
-    spaces are automatically replaced with "-" or "_"
-EOD
-}
-
-variable "name_prefix" {
-  description = <<EOD
-    (Optional) Specify the prefix text to be applied to all resource names
-EOD
-
-  default = ""
-}
-
-variable "name_suffix" {
-  description = <<EOD
-    (Optional) Specify the suffix text to be applied to all resource names
-EOD
-
-  default = ""
-}
-
-#
-# PROVIDER DETAILS
 # Define variables for configuring the required providers.
 #
 
@@ -141,6 +112,45 @@ EOD
   default = {}
 }
 
+
+#
+# General
+# -----------------------------------------------------------------------------
+# Define variables used across multiple resource types, e.g. for naming.
+#
+
+variable "default_workspace" {
+  description = <<EOD
+    (Optional) Override name of default workspace - resources created in any
+    other workspace are suffixed with its name
+EOD
+
+  default = "prod"
+}
+
+variable "usage" {
+  description = <<EOD
+    Use case of the key, e.g. 'Audit Logs' - properly capitalise,
+    spaces are automatically replaced with "-" or "_"
+EOD
+}
+
+variable "name_prefix" {
+  description = <<EOD
+    (Optional) Specify the prefix text to be applied to all resource names
+EOD
+
+  default = ""
+}
+
+variable "name_suffix" {
+  description = <<EOD
+    (Optional) Specify the suffix text to be applied to all resource names
+EOD
+
+  default = ""
+}
+
 #
 # IAM
 # -----------------------------------------------------------------------------
@@ -148,15 +158,24 @@ EOD
 #
 
 variable "iam_name_prefix" {
+  description = <<EOD
+    (Optional) Prefix applied to all IAM resources - in addition to
+    var.name_prefix
+EOD
+
   default = ""
 }
 
 variable "iam_path" {
-  description = "Path to use for all IAM resources"
+  description = "(Optional) Path to use for all IAM resources"
   default     = ""
 }
 
 variable "existing_primary_key_admin_role" {
+  description = <<EOD
+    (Optional) Name of existing role to use as primary key administrator
+EOD
+
   default = ""
 }
 
@@ -165,10 +184,15 @@ variable "primary_key_admin_assume_role_policy" {
 }
 
 variable "primary_key_admin_policy" {
+
   default = ""
 }
 
 variable "existing_backup_key_admin_role" {
+  description = <<EOD
+    (Optional) Name of existing role to use as backup key administrator
+EOD
+
   default = ""
 }
 
@@ -181,7 +205,8 @@ variable "backup_key_admin_policy" {
 }
 
 #
-# KEYS
+# Keys
+# -----------------------------------------------------------------------------
 # Define variables for configuring keys.
 #
 
@@ -270,7 +295,8 @@ EOD
 }
 
 #
-# STORAGE
+# Storage
+# -----------------------------------------------------------------------------
 # Define variables for configuring the storage buckets.
 #
 

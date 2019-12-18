@@ -14,7 +14,7 @@ EOD
 
 variable "existing_key_admin_iam_role" {
   description = <<EOD
-    (Optional) Specify an existing IAM Role ARN for the Key Admin Role (leave
+    (Optional) Specify an existing IAM Role name for the Key Admin Role (leave
     blank to create a new role)
 EOD
 
@@ -79,11 +79,16 @@ EOD
 #
 
 variable "iam_name_prefix" {
+  description = <<EOD
+    (Optional) Prefix applied to all IAM resources - in addition to
+    var.name_prefix
+EOD
+
   default = ""
 }
 
 variable "iam_path" {
-  description = "(Optional) IAM resource path"
+  description = "(Optional) Path to use for all IAM resources"
   default     = ""
 }
 
