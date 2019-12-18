@@ -148,6 +148,6 @@ resource "aws_iam_role_policy_attachment" "key_administrator" {
 }
 
 data "aws_iam_role" "key_admin_role" {
-  count = var.create || var.existing_key_admin_iam_role != "" ? 1 : 0
+  count = var.create ? 1 : 0
   name  = local.key_admin_iam_role_name
 }
