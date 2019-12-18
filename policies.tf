@@ -32,7 +32,7 @@ data "template_file" "custom_primary_bucket_policy_statements" {
   )
 
   vars = {
-    bucket_name = var.bucket_name
+    bucket_name = var.primary_bucket_name
   }
 }
 
@@ -45,7 +45,7 @@ locals {
     "Service": "cloudtrail.amazonaws.com"
   },
   "Action": "s3:GetBucketAcl",
-  "Resource": "arn:aws:s3:::${var.bucket_name}"
+  "Resource": "arn:aws:s3:::${var.primary_bucket_name}"
 },
 {
   "Effect": "Allow",
@@ -53,7 +53,7 @@ locals {
     "Service": "cloudtrail.amazonaws.com"
   },
   "Action": "s3:PutObject",
-  "Resource": "arn:aws:s3:::${var.bucket_name}/*",
+  "Resource": "arn:aws:s3:::${var.primary_bucket_name}/*",
   "Condition": { 
     "StringEquals": { 
       "s3:x-amz-acl": "bucket-owner-full-control" 

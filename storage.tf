@@ -35,7 +35,7 @@ locals {
 }
 
 resource "aws_s3_bucket" "primary" {
-  bucket = var.bucket_name
+  bucket = var.primary_bucket_name
   region = var.primary_deploy_region
   acl    = var.primary_bucket_acl
 
@@ -179,7 +179,11 @@ resource "aws_s3_bucket" "primary" {
 
 locals {
   # Calculate Backup bucket name from Primary
-  backup_bucket_name = format("backup-%s", var.bucket_name)
+  backup_bucket_name = (
+    var.backup_bucket_name != "" ?
+    var.backup_bucket_name :
+    format("backup-%s", var.primary_bucket_name)
+  )
 
   enable_backup_transitions = (length(var.backup_transitions) > 0)
 

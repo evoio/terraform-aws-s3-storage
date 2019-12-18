@@ -76,7 +76,7 @@ data "template_file" "replication_policy" {
   ))
 
   vars = {
-    primary_bucket_name = var.bucket_name
+    primary_bucket_name = var.primary_bucket_name
     primary_encryption_key_arn = ( # ignored if encryption not enabled
       var.enable_encryption ? module.primary_key.key.arn : null
     )

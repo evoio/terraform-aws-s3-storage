@@ -302,8 +302,13 @@ EOD
 
 # General
 
-variable "bucket_name" {
-  description = "Name of the storage bucket"
+variable "primary_bucket_name" {
+  description = "Name of the primary bucket"
+}
+
+variable "backup_bucket_name" {
+  description = "Name of the backup bucket"
+  default     = ""
 }
 
 variable "backup_storage_class" {
